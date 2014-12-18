@@ -28,6 +28,12 @@ typedef struct {
 	FN_CALLBACK ptrFunc;
 } RegVar;
 
+typedef struct {
+	String name;
+	String description;
+	FN_CALLBACK fn;
+} RegCmd;
+
 class SimpleTerminal {
 public:
 
@@ -37,9 +43,6 @@ public:
 
 	bool addVar(String name, VarType type, void *ptr = 0, const void *fnPtr = 0) {
 		if (regVarIndex == SIMPLE_THERMINAL_MAX_VAR) {
-#ifdef SIMPLE_THERMINAL_DEBUG
-			Serial.println("ETHVAR : Max var");
-#endif
 			return false;
 		} else {
 			RegVar *reg = &vars[regVarIndex++];
@@ -48,6 +51,19 @@ public:
 			reg->ptr = ptr;
 			reg->ptrFunc = *((FN_CALLBACK*) (&fnPtr));
 		}
+		return true;
+	}
+
+	bool addCommand(String name, const void *fnPtr, String description = "") {
+		if (regCmdIndex == SIMPLE_THERMINAL_MAX_VAR) {
+			return false;
+		} else {
+			RegCmd *reg = &cmds[regCmdIndex++];
+			reg->name = name;
+			reg->fn = *((FN_CALLBACK*) (&fnPtr));
+			reg->description = description;
+		}
+		return true;
 	}
 
 	void run() {
@@ -63,8 +79,8 @@ public:
 			}
 		}
 	}
-	
-	void printHelp(){
+
+	void printHelp() {
 		this->commandHelp();
 	}
 
@@ -89,8 +105,22 @@ private:
 			} else if (cmd.equals("help")) {
 				this->commandHelp();
 			} else {
-				stream->print("Unknown command : ");
-				stream->println(cmd);
+				bool found = false;
+				for (int i = 0; i < regCmdIndex; i++) {
+					RegCmd* c = &cmds[i];
+					Serial.print("test name :");
+					Serial.println(c->name);
+					if (cmd.equals(c->name)) {
+						c->fn(cmd, line);
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+					stream->print("Unknown command : ");
+					stream->println(cmd);
+				}
 			}
 		}
 	}
@@ -102,8 +132,8 @@ private:
 		}
 		return line.substring(0, firstSpace);
 	}
-	
-	void commandHelp(){
+
+	void commandHelp() {
 		stream->println("==================================");
 		stream->println("          SimpleTerminal");
 		stream->println("==================================");
@@ -112,6 +142,13 @@ private:
 		stream->println(" - list");
 		stream->println(" - set <varName> <newValue>");
 		stream->println(" - get <varName>");
+		for (int i = 0; i < regCmdIndex; i++) {
+			RegCmd* c = &cmds[i];
+			stream->print(" - ");
+			stream->print(c->name);
+			stream->print(" ");
+			stream->println(c->description);
+		}
 		stream->println("==================================");
 	}
 
@@ -219,6 +256,9 @@ private:
 
 	int regVarIndex = 0;
 	RegVar vars[SIMPLE_THERMINAL_MAX_VAR];
+	int regCmdIndex = 0;
+	RegCmd cmds[SIMPLE_THERMINAL_MAX_VAR];
+
 	Stream* stream;
 
 	String buffer;
