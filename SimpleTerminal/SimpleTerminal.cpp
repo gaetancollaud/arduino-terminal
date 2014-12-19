@@ -1,15 +1,22 @@
 #include "Arduino.h"
 #include "SimpleTerminal.h"
 
-SimpleTerminal::SimpleTerminal(Stream &stream) {
+SimpleTerminal::SimpleTerminal(Stream &stream, int maxCmds, int maxVars) : cmds(new RegCmd[maxCmds]), vars(new RegVar[maxVars]) {
 	this->stream = &stream;
+	this->maxCmds = maxCmds;
+	this->maxVars = maxVars;
 };
 
+SimpleTerminal::~SimpleTerminal() {
+	delete [] vars;
+	delete [] cmds;
+}
+
 bool SimpleTerminal::addVar(String name, VarType type, void *ptr, const void *fnPtr) {
-	if (regVarIndex == SIMPLE_THERMINAL_MAX_VAR) {
+	if (this->varIndex == this->maxVars) {
 		return false;
 	} else {
-		RegVar *reg = &vars[regVarIndex++];
+		RegVar *reg = &vars[this->varIndex++];
 		reg->name = name;
 		reg->type = type;
 		reg->ptr = ptr;
@@ -19,15 +26,23 @@ bool SimpleTerminal::addVar(String name, VarType type, void *ptr, const void *fn
 }
 
 bool SimpleTerminal::addCommand(String name, const void *fnPtr, String description) {
-	if (regCmdIndex == SIMPLE_THERMINAL_MAX_VAR) {
+	if (this->cmdIndex == this->maxCmds) {
 		return false;
 	} else {
-		RegCmd *reg = &cmds[regCmdIndex++];
+		RegCmd *reg = &cmds[this->cmdIndex++];
 		reg->name = name;
 		reg->fn = *((FN_CALLBACK*) (&fnPtr));
 		reg->description = description;
 	}
 	return true;
+}
+
+void SimpleTerminal::setVarCmdEnabled(bool newValue) {
+	this->varCmdEnabled = newValue;
+}
+
+void SimpleTerminal::setConfirmPrintVar(bool newValue) {
+	this->confirmPrintVar = newValue;
 }
 
 void SimpleTerminal::run() {
@@ -48,6 +63,12 @@ void SimpleTerminal::printHelp() {
 	commandHelp();
 }
 
+void SimpleTerminal::setStream(Stream& stream) {
+	this->stream = &stream;
+}
+
+
+
 //------------------------------
 // PRIVATE
 //------------------------------
@@ -55,20 +76,25 @@ void SimpleTerminal::printHelp() {
 void SimpleTerminal::anaylseLine(String &line) {
 	if (line.length()) {
 		String cmd = getFirstWord(line);
-		if (cmd.equals("set")) {
-			this->commandSet(line);
-		} else if (cmd.equals("printenv")) {
-			this->commandPrintEnv();
-		} else if (cmd.equals("get")) {
-			this->commandGet(line);
-		} else if (cmd.equals("help")) {
+		bool found = false;
+		if (cmd.equals(CMD_NAME_HELP)) {
 			this->commandHelp();
-		} else {
-			bool found = false;
-			for (int i = 0; i < regCmdIndex; i++) {
+			found = true;
+		} else if (this->varCmdEnabled) {
+			if (cmd.equals(CMD_NAME_SET_VAR)) {
+				this->commandSet(line);
+				found = true;
+			} else if (cmd.equals(CMD_NAME_PRINTENV)) {
+				this->commandPrintEnv();
+				found = true;
+			} else if (cmd.equals(CMD_NAME_GET_VAR)) {
+				this->commandGet(line);
+				found = true;
+			}
+		}
+		if (!found) {
+			for (int i = 0; i < cmdIndex; i++) {
 				RegCmd* c = &cmds[i];
-				Serial.print("test name :");
-				Serial.println(c->name);
 				if (cmd.equals(c->name)) {
 					c->fn(cmd, line);
 					found = true;
@@ -84,7 +110,7 @@ void SimpleTerminal::anaylseLine(String &line) {
 	}
 }
 
-String SimpleTerminal::getFirstWord(String &line) {
+String SimpleTerminal::getFirstWord(String & line) {
 	int firstSpace = line.indexOf(' ');
 	if (firstSpace == -1) {
 		firstSpace = line.length();
@@ -96,12 +122,20 @@ void SimpleTerminal::commandHelp() {
 	stream->println("==================================");
 	stream->println("          SimpleTerminal");
 	stream->println("==================================");
-	stream->println("command available : ");
-	stream->println(" - help");
-	stream->println(" - printenv");
-	stream->println(" - set <varName> <newValue>");
-	stream->println(" - get <varName>");
-	for (int i = 0; i < regCmdIndex; i++) {
+	stream->println("commands available : ");
+	stream->print(" - ");
+	stream->println(CMD_NAME_PRINTENV);
+	if (this->varCmdEnabled) {
+		stream->print(" - ");
+		stream->println(CMD_NAME_PRINTENV);
+		stream->print(" - ");
+		stream->print(CMD_NAME_SET_VAR);
+		stream->println(" <varName> <newValue>");
+		stream->print(" - ");
+		stream->print(CMD_NAME_GET_VAR);
+		stream->println(" <varName>");
+	}
+	for (int i = 0; i < cmdIndex; i++) {
 		RegCmd* c = &cmds[i];
 		stream->print(" - ");
 		stream->print(c->name);
@@ -114,12 +148,12 @@ void SimpleTerminal::commandHelp() {
 void SimpleTerminal::commandPrintEnv() {
 	stream->println("List of variabless ");
 	stream->println("--------------------");
-	for (int i = 0; i < regVarIndex; i++) {
+	for (int i = 0; i < varIndex; i++) {
 		printVar(&vars[i]);
 	}
 }
 
-void SimpleTerminal::commandSet(String &line) {
+void SimpleTerminal::commandSet(String & line) {
 	int endName = line.indexOf(' ', 4);
 	if (endName == -1 || endName == line.length()) {
 		stream->println("wrong parameter for set command");
@@ -127,7 +161,7 @@ void SimpleTerminal::commandSet(String &line) {
 		String name = line.substring(4, endName);
 		RegVar* var = 0;
 
-		for (int i = 0; i < regVarIndex; i++) {
+		for (int i = 0; i < varIndex; i++) {
 			if (name.equals(vars[i].name)) {
 				var = &vars[i];
 				break;
@@ -155,7 +189,9 @@ void SimpleTerminal::commandSet(String &line) {
 						break;
 				}
 			}
-			printVar(var);
+			if (this->confirmPrintVar) {
+				printVar(var);
+			}
 			if (var->ptrFunc) {
 				var->ptrFunc(name, value);
 			}
@@ -166,10 +202,10 @@ void SimpleTerminal::commandSet(String &line) {
 	}
 }
 
-void SimpleTerminal::commandGet(String &line) {
+void SimpleTerminal::commandGet(String & line) {
 	String name = line.substring(4, line.length());
 	bool found = false;
-	for (int i = 0; i < regVarIndex; i++) {
+	for (int i = 0; i < varIndex; i++) {
 		if (name.equals(vars[i].name)) {
 			printVar(&vars[i]);
 			found = true;
@@ -182,7 +218,7 @@ void SimpleTerminal::commandGet(String &line) {
 	}
 }
 
-void SimpleTerminal::printVar(RegVar *var) {
+void SimpleTerminal::printVar(RegVar * var) {
 	stream->print(var->name);
 	stream->print('\t');
 	stream->print(VarTypePretty[var->type]);

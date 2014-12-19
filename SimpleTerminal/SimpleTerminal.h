@@ -3,11 +3,10 @@
 
 #include <Arduino.h>
 
-#ifndef SIMPLE_THERMINAL_MAX_VAR
-#define SIMPLE_THERMINAL_MAX_VAR 10
-#endif
-
-//#define SIMPLE_THERMINAL_DEBUG
+#define CMD_NAME_HELP "help"
+#define CMD_NAME_PRINTENV "printenv"
+#define CMD_NAME_SET_VAR "set"
+#define CMD_NAME_GET_VAR "get"
 
 enum VarType {
 	BOOL,
@@ -35,11 +34,25 @@ typedef struct {
 class SimpleTerminal {
 public:
 
-	SimpleTerminal(Stream &stream);
+	/**
+	 * Constructor.
+	 * Create the arrays for the variables and the commands.
+	 * 
+     * @param stream stream to listen to
+     * @param maxCmds size of the commands array
+     * @param maxVars size of the variables array
+     */
+	SimpleTerminal(Stream &stream, int maxCmds=5, int maxVars=5);
+	~SimpleTerminal();
+	
 	bool addVar(String name, VarType type, void *ptr = 0, const void *fnPtr = 0);
 	bool addCommand(String name, const void *fnPtr, String description = "");
+	void setVarCmdEnabled(bool newValue);
+	void setConfirmPrintVar(bool newValue);
 	void run();
 	void printHelp();
+	
+	void setStream(Stream &stream);
 
 private:
 
@@ -50,11 +63,16 @@ private:
 	void commandSet(String &line);
 	void commandGet(String &line);
 	void printVar(RegVar *var);
+	
+	bool varCmdEnabled = true;
+	bool confirmPrintVar = true;
 
-	int regVarIndex = 0;
-	RegVar vars[SIMPLE_THERMINAL_MAX_VAR];
-	int regCmdIndex = 0;
-	RegCmd cmds[SIMPLE_THERMINAL_MAX_VAR];
+	int maxVars;
+	int maxCmds;
+	int varIndex = 0;
+	int cmdIndex = 0;
+	RegVar* vars;
+	RegCmd* cmds;
 
 	Stream* stream;
 
