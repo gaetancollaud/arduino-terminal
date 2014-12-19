@@ -1,4 +1,4 @@
-#include "SimpleTerminal.h"
+#include <SimpleTerminal.h>
 
 SimpleTerminal terminal(Serial);
 
