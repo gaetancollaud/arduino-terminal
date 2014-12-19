@@ -1,10 +1,15 @@
 #include "Arduino.h"
 #include "SimpleTerminal.h"
 
-SimpleTerminal::SimpleTerminal(Stream &stream, int maxCmds, int maxVars) : cmds(new RegCmd[maxCmds]), vars(new RegVar[maxVars]) {
-	this->stream = &stream;
+//------------------------------
+// PUBLIC
+//------------------------------
+
+SimpleTerminal::SimpleTerminal(Stream *stream, int maxCmds, int maxVars) : cmds(new RegCmd[maxCmds]), vars(new RegVar[maxVars]) {
+	this->stream = stream;
 	this->maxCmds = maxCmds;
 	this->maxVars = maxVars;
+	this->varCmdEnabled = maxVars > 0;
 };
 
 SimpleTerminal::~SimpleTerminal() {
@@ -46,15 +51,17 @@ void SimpleTerminal::setConfirmPrintVar(bool newValue) {
 }
 
 void SimpleTerminal::run() {
-	while (stream->available()) {
-		char c = stream->read();
-		if (c == '\r') {
-			//ignore
-		} else if (c == '\n') {
-			anaylseLine(buffer);
-			buffer = String();
-		} else {
-			buffer += c;
+	if (stream) {
+		while (stream->available()) {
+			char c = stream->read();
+			if (c == '\r') {
+				//ignore
+			} else if (c == '\n') {
+				anaylseLine(buffer);
+				buffer = String();
+			} else {
+				buffer += c;
+			}
 		}
 	}
 }
@@ -63,10 +70,9 @@ void SimpleTerminal::printHelp() {
 	commandHelp();
 }
 
-void SimpleTerminal::setStream(Stream& stream) {
-	this->stream = &stream;
+void SimpleTerminal::setStream(Stream* stream) {
+	this->stream = stream;
 }
-
 
 
 //------------------------------
@@ -124,7 +130,7 @@ void SimpleTerminal::commandHelp() {
 	stream->println("==================================");
 	stream->println("commands available : ");
 	stream->print(" - ");
-	stream->println(CMD_NAME_PRINTENV);
+	stream->println(CMD_NAME_HELP);
 	if (this->varCmdEnabled) {
 		stream->print(" - ");
 		stream->println(CMD_NAME_PRINTENV);

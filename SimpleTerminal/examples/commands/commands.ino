@@ -1,11 +1,11 @@
-#include "SimpleTerminal.h"
+#include <SimpleTerminal.h>
 
-SimpleTerminal terminal(Serial);
+SimpleTerminal terminal(&Serial);
 
 
 void setup(){
 	Serial.begin(115200);
-	terminal.addCommand("test", (void*)test, "ma super description");
+	terminal.addCommand("test", (void*)test, "my pretty description");
 	terminal.printHelp();
 }
 

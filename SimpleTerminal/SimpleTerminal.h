@@ -42,7 +42,7 @@ public:
      * @param maxCmds size of the commands array
      * @param maxVars size of the variables array
      */
-	SimpleTerminal(Stream &stream, int maxCmds=5, int maxVars=5);
+	SimpleTerminal(Stream *stream, int maxCmds=5, int maxVars=5);
 	~SimpleTerminal();
 	
 	bool addVar(String name, VarType type, void *ptr = 0, const void *fnPtr = 0);
@@ -51,8 +51,7 @@ public:
 	void setConfirmPrintVar(bool newValue);
 	void run();
 	void printHelp();
-	
-	void setStream(Stream &stream);
+	void setStream(Stream *stream);
 
 private:
 
