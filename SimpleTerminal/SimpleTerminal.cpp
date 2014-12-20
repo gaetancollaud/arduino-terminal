@@ -232,10 +232,10 @@ void SimpleTerminal::printVar(RegVar * var) {
 	if (var->ptr) {
 		switch (var->type) {
 			case FLOAT:
-				stream->print(*(float*) var->ptr);
+				stream->print(*(float*) var->ptr, SIMPLETERMINAL_FLOAT_DECIMAL);
 				break;
 			case DOUBLE:
-				stream->print(*(double*) var->ptr);
+				stream->print(*(double*) var->ptr, SIMPLETERMINAL_FLOAT_DECIMAL);
 				break;
 			case BOOL:
 				stream->print((*(bool*) var->ptr) == 0 ? "false" : "true");

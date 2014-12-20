@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#define SIMPLETERMINAL_FLOAT_DECIMAL 10
+
 #define CMD_NAME_HELP "help"
 #define CMD_NAME_PRINTENV "printenv"
 #define CMD_NAME_SET_VAR "set"
