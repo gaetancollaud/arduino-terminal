@@ -88,3 +88,16 @@ v4	INT	-
 v3	BOOL	false
 v3 changed to false
 ```
+**set v2 3.14159**
+```
+v2	DOUBLE	3.14
+```
+**printenv**
+```
+List of variabless 
+--------------------
+v1	INT	10
+v2	DOUBLE	3.14
+v3	BOOL	false
+v4	INT	-
+```
