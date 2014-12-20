@@ -79,7 +79,7 @@ void loop(){
 List of variabless 
 --------------------
 v1	INT	10
-v2	DOUBLE	2.16
+v2	DOUBLE	2.1588
 v3	BOOL	true
 v4	INT	-
 ```
@@ -90,14 +90,14 @@ v3 changed to false
 ```
 **set v2 3.14159**
 ```
-v2	DOUBLE	3.14
+v2	DOUBLE	3.14159
 ```
 **printenv**
 ```
 List of variabless 
 --------------------
 v1	INT	10
-v2	DOUBLE	3.14
+v2	DOUBLE	3.14159
 v3	BOOL	false
 v4	INT	-
 ```
