@@ -67,7 +67,10 @@ void SimpleTerminal::run() {
 }
 
 void SimpleTerminal::printHelp() {
-	commandHelp();
+	this->commandHelp();
+}
+void SimpleTerminal::printEnv() {
+	this->commandPrintEnv();
 }
 
 void SimpleTerminal::setStream(Stream* stream) {

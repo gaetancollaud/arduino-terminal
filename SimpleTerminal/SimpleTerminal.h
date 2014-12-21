@@ -53,6 +53,7 @@ public:
 	void setConfirmPrintVar(bool newValue);
 	void run();
 	void printHelp();
+	void printEnv();
 	void setStream(Stream *stream);
 
 private:
