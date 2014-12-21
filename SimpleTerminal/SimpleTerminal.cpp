@@ -178,8 +178,10 @@ void SimpleTerminal::commandSet(String & line) {
 			if (var->ptr) {
 				switch (var->type) {
 					case FLOAT:
-					case DOUBLE:
 						*(float*) var->ptr = value.toFloat();
+						break;
+					case DOUBLE:
+						*(double*) var->ptr = value.toFloat();
 						break;
 					case BOOL:
 						if (value.equals("true")) {
@@ -189,9 +191,11 @@ void SimpleTerminal::commandSet(String & line) {
 						}
 						break;
 					case LONG:
+						*((long*) var->ptr) = value.toInt();
+						break;
 					case INT:
 					default:
-						*((long*) var->ptr) = value.toInt();
+						*((int*) var->ptr) = value.toInt();
 						break;
 				}
 			}
